@@ -1,0 +1,23 @@
+# Ignorar node_modules
+node_modules/
+
+# Ignorar archivos de log
+*.log
+npm-debug.log*
+
+# Ignorar archivos de entorno
+.env
+.env.local
+
+# Ignorar archivos del sistema
+.DS_Store
+Thumbs.db
+
+# Ignorar carpeta de datos del perfil de usuario (si se usa)
+user-data/
+chrome-profile/
+edge-profile/
+
+# Ignorar archivos temporales
+*.tmp
+*.temp

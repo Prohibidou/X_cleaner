@@ -1,0 +1,16 @@
+{
+  "name": "x-cleaner",
+  "version": "1.0.0",
+  "description": "Herramienta para eliminar replies de Twitter/X",
+  "main": "puppeteer-script.js",
+  "scripts": {
+    "start": "node puppeteer-script.js",
+    "console": "echo 'Abre console-script.js y copia su contenido en la consola de Twitter'"
+  },
+  "keywords": ["twitter", "x", "scraper", "automation"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "puppeteer": "^21.6.1"
+  }
+}

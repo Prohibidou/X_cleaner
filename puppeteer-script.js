@@ -115,113 +115,176 @@ class TwitterRepliesDeleter {
         return await this.page.$$('[data-testid="tweet"]');
     }
 
-    // Delete a tweet
-    async deleteTweet(tweet) {
+    // Process a tweet (Delete or Undo Retweet)
+    async processTweet(tweet) {
         try {
             // 1. Click on "More" button (...)
-            const moreButton = await tweet.$('[aria-label*="More"]');
+            // Try multiple selectors for the More button to be robust across languages
+            const moreButton = await tweet.$('[aria-label*="More"], [aria-label*="Más"], [data-testid="caret"]');
+
             if (!moreButton) {
-                console.log('⚠️  More button not found');
-                return false;
+                return { status: 'skipped', reason: 'no_more_button' };
             }
 
             await moreButton.click();
-            await this.randomDelay(800, 1200);
 
-            // 2. Find and click "Delete"
-            const deleteButton = await this.page.evaluateHandle(() => {
-                const menuItems = document.querySelectorAll('[role="menuitem"]');
-                for (let item of menuItems) {
-                    if (item.innerText.includes('Delete') || item.innerText.includes('Eliminar')) {
-                        return item;
-                    }
-                }
+            // Wait for menu to appear
+            try {
+                await this.page.waitForSelector('[role="menu"]', { timeout: 2000 });
+            } catch (e) {
+                // If menu doesn't appear, maybe click failed or it's not interactive
+                return { status: 'skipped', reason: 'menu_not_opened' };
+            }
+
+            // 2. Check for available actions in the menu
+            const action = await this.page.evaluate(() => {
+                const menuItems = Array.from(document.querySelectorAll('[role="menuitem"]'));
+
+                // Check for Delete option
+                const deleteBtn = menuItems.find(item =>
+                    item.innerText.includes('Delete') ||
+                    item.innerText.includes('Eliminar')
+                );
+                if (deleteBtn) return { type: 'delete', text: deleteBtn.innerText };
+
+                // Check for Undo Retweet/Repost option
+                const undoRetweetBtn = menuItems.find(item =>
+                    item.innerText.includes('Undo Repost') ||
+                    item.innerText.includes('Deshacer repost') ||
+                    item.innerText.includes('Undo Retweet') ||
+                    item.innerText.includes('Deshacer retweet')
+                );
+                if (undoRetweetBtn) return { type: 'undo_retweet', text: undoRetweetBtn.innerText };
+
                 return null;
             });
 
-            if (!deleteButton || !deleteButton.asElement()) {
-                console.log('⚠️  Delete button not found');
-                await this.page.click('body'); // Close menu
-                return false;
+            if (!action) {
+                // Not my tweet (no delete option) or not a retweet I can undo
+                // Close menu by clicking body
+                await this.page.click('body');
+                await this.randomDelay(300, 500);
+                return { status: 'skipped', reason: 'not_my_tweet' };
             }
 
-            await deleteButton.asElement().click();
-            await this.randomDelay(800, 1200);
+            // 3. Execute the action
+            const actionButton = await this.page.evaluateHandle((actionType) => {
+                const menuItems = Array.from(document.querySelectorAll('[role="menuitem"]'));
+                if (actionType === 'delete') {
+                    return menuItems.find(item => item.innerText.includes('Delete') || item.innerText.includes('Eliminar'));
+                } else {
+                    return menuItems.find(item =>
+                        item.innerText.includes('Undo Repost') ||
+                        item.innerText.includes('Deshacer repost') ||
+                        item.innerText.includes('Undo Retweet') ||
+                        item.innerText.includes('Deshacer retweet')
+                    );
+                }
+            }, action.type);
 
-            // 3. Confirm deletion
-            const confirmButton = await this.page.$('[data-testid="confirmationSheetConfirm"]');
-            if (!confirmButton) {
-                console.log('⚠️  Could not confirm deletion');
-                return false;
+            if (actionButton && actionButton.asElement()) {
+                await actionButton.asElement().click();
+                await this.randomDelay(800, 1200);
+
+                // 4. Confirm action if necessary
+                const confirmButton = await this.page.$('[data-testid="confirmationSheetConfirm"]');
+                if (confirmButton) {
+                    await confirmButton.click();
+                    await this.randomDelay(1500, 2000); // Wait for animation
+                }
+
+                return { status: 'success', type: action.type };
             }
 
-            await confirmButton.click();
-            await this.randomDelay(1000, 1500);
-
-            return true;
+            return { status: 'error', reason: 'button_click_failed' };
 
         } catch (error) {
-            console.error('❌ Error deleting tweet:', error.message);
-            return false;
+            // Try to close menu if open to reset state
+            try { await this.page.click('body'); } catch (e) { }
+            return { status: 'error', reason: error.message };
         }
     }
 
     // Main process
     async processReplies() {
         console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-        console.log('🗑️  Starting reply deletion...');
+        console.log('🗑️  Starting cleanup (Replies & Retweets)...');
         console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 
-        let consecutiveFailures = 0;
+        let consecutiveEmptyScrolls = 0;
         let batchCount = 0;
 
         while (true) {
-            // Get visible replies
-            const replies = await this.getVisibleReplies();
+            // Reset index for the new view
+            let index = 0;
+            let somethingDeletedInThisView = false;
 
-            if (replies.length === 0) {
-                console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-                console.log('✅ No more replies found to delete');
-                break;
-            }
+            // Loop through visible items
+            while (true) {
+                // Refresh list of tweets because DOM changes after deletion
+                const currentTweets = await this.getVisibleReplies();
 
-            console.log(`📊 Replies found on screen: ${replies.length}`);
-            console.log(`🗑️  Processing next reply...`);
-
-            // Process the first reply
-            const success = await this.deleteTweet(replies[0]);
-
-            if (success) {
-                this.deletedCount++;
-                consecutiveFailures = 0;
-                console.log(`✅ Reply #${this.deletedCount} successfully deleted\n`);
-
-                // Scroll
-                await this.scrollToLoadMore();
-
-                // Pause after each batch
-                batchCount++;
-                if (batchCount >= this.config.batchSize) {
-                    console.log(`⏸️  ${this.config.pauseAfterBatch / 1000}s pause after ${this.config.batchSize} deletions\n`);
-                    await this.randomDelay(this.config.pauseAfterBatch, this.config.pauseAfterBatch + 2000);
-                    batchCount = 0;
-                }
-
-            } else {
-                this.errorCount++;
-                consecutiveFailures++;
-                console.log(`⚠️  Failed to delete (${consecutiveFailures}/${this.config.maxRetries})\n`);
-
-                if (consecutiveFailures >= this.config.maxRetries) {
-                    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-                    console.log('❌ Too many consecutive failures. Stopping...');
+                if (index >= currentTweets.length) {
+                    // Processed all visible items
                     break;
                 }
 
+                // console.log(`🔍 Checking item ${index + 1}/${currentTweets.length}...`);
+                const targetTweet = currentTweets[index];
+
+                const result = await this.processTweet(targetTweet);
+
+                if (result.status === 'success') {
+                    this.deletedCount++;
+                    console.log(`✅ ${result.type === 'delete' ? 'Deleted' : 'Undid Retweet'} item #${this.deletedCount}`);
+                    somethingDeletedInThisView = true;
+
+                    // Since we deleted an item, the list shifted up. 
+                    // The item at 'index' is now a NEW item (the one that was at index+1).
+                    // So we do NOT increment index.
+
+                    // Pause periodically
+                    batchCount++;
+                    if (batchCount >= this.config.batchSize) {
+                        console.log(`⏸️  Pausing for ${this.config.pauseAfterBatch / 1000}s...`);
+                        await this.randomDelay(this.config.pauseAfterBatch, this.config.pauseAfterBatch + 2000);
+                        batchCount = 0;
+                    } else {
+                        await this.randomDelay(1000, 1500);
+                    }
+
+                } else {
+                    // If skipped or error, we move to the next item
+                    if (result.status === 'error') {
+                        console.log(`⚠️  Error on item: ${result.reason}`);
+                        this.errorCount++;
+                    }
+                    // If skipped (not my tweet), just move on
+                    index++;
+                }
+            }
+
+            // If we finished the loop and deleted something, we might want to check again before scrolling?
+            // But usually scrolling is safe now.
+
+            if (!somethingDeletedInThisView) {
+                console.log(`⬇️  No more deletable items visible (${consecutiveEmptyScrolls}/5). Scrolling...`);
+                await this.scrollToLoadMore();
+                consecutiveEmptyScrolls++;
+
+                if (consecutiveEmptyScrolls >= 5) {
+                    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+                    console.log('❌ No new items found after multiple scrolls. Stopping.');
+                    break;
+                }
+            } else {
+                // We deleted something, so we made progress. Reset empty scroll counter.
+                consecutiveEmptyScrolls = 0;
+                // Scroll to bring new items into view
                 await this.scrollToLoadMore();
             }
 
-            // Delay between operations
+            // Delay between screens
             await this.randomDelay();
         }
     }

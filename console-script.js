@@ -1,5 +1,5 @@
 /**
- * TWITTER/X REPLIES DELETER - Console Script [v4.2 STABLE]
+ * TWITTER/X REPLIES DELETER - Console Script [v5.1 STABLE]
  * ==========================================================
  * 
  * INSTRUCTIONS:
@@ -8,16 +8,10 @@
  * 3. Open browser console (F12)
  * 4. Paste this entire script and press Enter
  * 5. The script will start deleting ONLY YOUR replies
- * 
- * IMPROVEMENTS v4.2:
- * - ✅ Active wait until menu loads completely
- * - ✅ Retry system when menu is empty
- * - ✅ User filter (only deletes YOUR replies)
- * - ✅ Robust error and timing handling
  */
 
 (async function deleteAllReplies() {
-    console.log('🚀 Starting X Cleaner [v4.2 STABLE]');
+    console.log('🚀 Starting X Cleaner [v5.1 STABLE]');
     console.log('⚠️  To stop: reload page (F5)');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
@@ -38,6 +32,8 @@
         waitAfterDelete: 1500
     };
 
+    // --- HELPER FUNCTIONS ---
+
     const randomDelay = (min = config.minDelay, max = config.maxDelay) => {
         const delay = Math.floor(Math.random() * (max - min + 1)) + min;
         return new Promise(resolve => setTimeout(resolve, delay));
@@ -52,6 +48,8 @@
 
     const closeOpenMenus = async () => {
         document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape', keyCode: 27 }));
+        const overlay = document.querySelector('[data-testid="mask"]');
+        if (overlay) overlay.click();
         await randomDelay(200, 400);
     };
 
@@ -67,73 +65,58 @@
         return null;
     };
 
-    const isTweetByUser = (article, username) => {
-        if (!username) return false;
-        const authorLinks = article.querySelectorAll('a[role="link"]');
-        for (let link of authorLinks) {
-            const href = link.getAttribute('href');
-            if (href && href.startsWith('/')) {
-                if (href.includes('/status/')) continue;
-                const match = href.match(/^\/([^\/]+)$/);
-                if (match) {
-                    const tweetUsername = match[1].toLowerCase();
-                    if (tweetUsername === username) {
-                        return true;
-                    }
-                }
-            }
-        }
-        return false;
-    };
-
-    const getUserReplies = (username) => {
-        const articles = document.querySelectorAll('article[data-testid="tweet"]');
-        const userArticles = [];
-        for (let article of articles) {
-            if (isTweetByUser(article, username)) {
-                userArticles.push(article);
-            }
-        }
-        return userArticles;
-    };
-
     const findMoreButton = (article) => {
+        // 1. Look for 'More' or 'Más' aria-label
         const buttons = article.querySelectorAll('button[aria-label]');
         for (let btn of buttons) {
-            const label = btn.getAttribute('aria-label');
-            if (label && label.toLowerCase().includes('more')) {
+            const label = btn.getAttribute('aria-label').toLowerCase();
+            if (label.includes('more') || label.includes('más') || label.includes('mas')) {
                 return btn;
             }
         }
+
+        // 2. Look for caret icon (data-testid="caret")
         const caretButton = article.querySelector('[data-testid="caret"]');
         if (caretButton) return caretButton;
-        const actionButtons = article.querySelectorAll('[role="group"] button');
-        if (actionButtons.length > 0) {
-            return actionButtons[actionButtons.length - 1];
+
+        // 3. Fallback: Look for the last button in the action group (usually Share or More)
+        const actionGroup = article.querySelector('[role="group"]');
+        if (actionGroup) {
+            const actionButtons = actionGroup.querySelectorAll('button');
+            if (actionButtons.length > 0) {
+                return actionButtons[actionButtons.length - 1];
+            }
         }
+
         return null;
     };
 
-    const findDeleteButton = () => {
-        const menuItems = document.querySelectorAll('[role="menuitem"]');
-        for (let item of menuItems) {
-            const allText = item.textContent || item.innerText || '';
-            if (allText.match(/^Delete$/i) ||
-                allText.match(/^Eliminar$/i) ||
-                allText.match(/^Borrar$/i) ||
-                allText.includes('Delete post') ||
-                allText.includes('Eliminar post')) {
-                return item;
-            }
-        }
-        const allSpans = document.querySelectorAll('[role="menu"] span');
-        for (let span of allSpans) {
-            const text = span.textContent.trim();
-            if (text === 'Delete' || text === 'Eliminar' || text === 'Borrar') {
-                const menuitem = span.closest('[role="menuitem"]');
-                if (menuitem) return menuitem;
-            }
-        }
+    const findActionInMenu = () => {
+        const menuItems = Array.from(document.querySelectorAll('[role="menuitem"]'));
+
+        // Check for Delete
+        const deleteBtn = menuItems.find(item => {
+            const text = (item.textContent || item.innerText || '').toLowerCase();
+            const testId = item.getAttribute('data-testid') || '';
+            return text.includes('delete') ||
+                text.includes('eliminar') ||
+                text.includes('borrar') ||
+                testId === 'Dropdown-Delete';
+        });
+        if (deleteBtn) return { type: 'delete', element: deleteBtn };
+
+        // Check for Undo Retweet
+        const undoRetweetBtn = menuItems.find(item => {
+            const text = (item.textContent || item.innerText || '').toLowerCase();
+            const testId = item.getAttribute('data-testid') || '';
+            return text.includes('undo repost') ||
+                text.includes('deshacer repost') ||
+                text.includes('undo retweet') ||
+                text.includes('deshacer retweet') ||
+                testId === 'Dropdown-Retweet';
+        });
+        if (undoRetweetBtn) return { type: 'undo_retweet', element: undoRetweetBtn };
+
         return null;
     };
 
@@ -143,8 +126,8 @@
         if (!confirmButton) {
             const dialogButtons = document.querySelectorAll('[role="button"]');
             for (let btn of dialogButtons) {
-                const text = (btn.textContent || '').trim();
-                if (text === 'Delete' || text === 'Eliminar' || text === 'Borrar') {
+                const text = (btn.textContent || '').trim().toLowerCase();
+                if (text === 'delete' || text === 'eliminar' || text === 'borrar') {
                     confirmButton = btn;
                     break;
                 }
@@ -157,8 +140,9 @@
         return false;
     };
 
-    // IMPROVED FUNCTION WITH ACTIVE WAITING
-    const deleteTweet = async (article) => {
+    // --- MAIN LOGIC ---
+
+    const processTweet = async (article) => {
         try {
             await closeOpenMenus();
             article.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -166,138 +150,138 @@
 
             const moreButton = findMoreButton(article);
             if (!moreButton) {
-                console.log('  ⚠️  More button not found');
-                return 'skip';
+                return { status: 'skip', reason: 'no_more_button' };
             }
 
-            console.log('  → Opening menu...');
             moreButton.click();
 
             // ACTIVE WAIT: Wait until menu has options loaded
             let menuLoaded = false;
             let waitAttempts = 0;
-            const maxWaitAttempts = 10; // 10 x 500ms = 5 seconds
+            const maxWaitAttempts = 6; // 3 seconds max
 
             while (!menuLoaded && waitAttempts < maxWaitAttempts) {
-                await randomDelay(500, 600);
+                await randomDelay(400, 500);
                 const menuItems = document.querySelectorAll('[role="menuitem"]');
-
-                if (menuItems.length > 0) {
-                    menuLoaded = true;
-                    console.log(`  → ✓ Menu loaded (${menuItems.length} options)`);
-                } else {
-                    waitAttempts++;
-                }
+                if (menuItems.length > 0) menuLoaded = true;
+                else waitAttempts++;
             }
 
             // If menu didn't load, RETRY ONCE
             if (!menuLoaded) {
-                console.log('  → ⏳ Menu empty, retrying...');
                 await closeOpenMenus();
-                await randomDelay(1500, 2000);
-
-                article.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                await randomDelay(600, 800);
+                await randomDelay(500, 800);
                 moreButton.click();
-                await randomDelay(3000, 3500);
+                await randomDelay(1000, 1500);
 
                 const menuItems = document.querySelectorAll('[role="menuitem"]');
                 if (menuItems.length === 0) {
-                    console.log('  → ❌ Menu still empty');
                     await closeOpenMenus();
-                    return 'skip';
+                    return { status: 'skip', reason: 'menu_empty' };
                 }
-                console.log(`  → ✓ Menu loaded on 2nd attempt (${menuItems.length} options)`);
             }
 
-            const deleteButton = findDeleteButton();
-            if (!deleteButton) {
-                console.log('  ⚠️  Delete not found (not your reply)');
+            const action = findActionInMenu();
+            if (!action) {
                 await closeOpenMenus();
-                return 'skip';
+                return { status: 'skip', reason: 'not_my_tweet' };
             }
 
-            console.log('  → ✓ Delete found');
-            deleteButton.click();
+            console.log(`  → ✓ Found action: ${action.type}`);
+            action.element.click();
             await randomDelay(900, 1300);
 
             const confirmed = await confirmDelete();
-            if (!confirmed) {
-                console.log('  ⚠️  Could not confirm');
-                await closeOpenMenus();
-                return 'error';
+            if (!confirmed && action.type === 'delete') {
+                if (document.querySelector('[role="menu"]')) {
+                    console.log('  ⚠️  Could not confirm');
+                    await closeOpenMenus();
+                    return { status: 'error', reason: 'confirmation_failed' };
+                }
             }
 
-            console.log('  → ✓ Confirmed');
+            console.log('  → ✓ Action completed');
             await randomDelay(config.waitAfterDelete, config.waitAfterDelete + 500);
-            return 'success';
+            return { status: 'success', type: action.type };
 
         } catch (error) {
             console.error('  ❌ Error:', error.message);
             await closeOpenMenus();
-            return 'error';
+            return { status: 'error', reason: error.message };
         }
     };
 
     const processReplies = async () => {
-        const username = getLoggedInUsername();
-        if (!username) {
-            console.error('❌ Could not detect username');
-            return;
-        }
+        console.log('\n🔍 Searching for tweets/replies...\n');
 
-        console.log(`✅ User: @${username}`);
-        console.log('\n🔍 Searching for your replies...\n');
-
-        let consecutiveSkips = 0;
+        let consecutiveEmptyScrolls = 0;
         let batchCount = 0;
 
         while (isRunning) {
             attemptCount++;
-            await scrollToLoadMore();
 
-            const replies = getUserReplies(username);
-            const currentReplyCount = replies.length;
+            // Get all visible tweets
+            const articles = Array.from(document.querySelectorAll('article[data-testid="tweet"]'));
+            console.log(`\n📊 Scan #${attemptCount} - Visible tweets: ${articles.length}`);
 
-            console.log(`\n📊 Attempt #${attemptCount} - Your tweets: ${currentReplyCount}`);
-
-            if (currentReplyCount === 0) {
-                consecutiveSkips++;
-                console.log(`⚠️  No replies found (${consecutiveSkips}/${config.maxConsecutiveSkips})`);
-
-                if (consecutiveSkips >= config.maxConsecutiveSkips) {
-                    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-                    console.log('✅ No more replies to delete');
+            if (articles.length === 0) {
+                consecutiveEmptyScrolls++;
+                console.log(`⚠️  No tweets visible (${consecutiveEmptyScrolls}/5)`);
+                if (consecutiveEmptyScrolls >= 5) {
+                    console.log('✅ No more tweets found. Stopping.');
                     break;
                 }
-
-                await randomDelay(2000, 3000);
+                await scrollToLoadMore();
                 continue;
             }
 
-            consecutiveSkips = 0;
-            console.log(`🗑️  Processing reply...`);
-            const result = await deleteTweet(replies[0]);
+            let somethingProcessedInThisView = false;
 
-            if (result === 'success') {
-                deletedCount++;
-                console.log(`✅ Reply #${deletedCount} deleted\n`);
+            // Iterate through all visible articles
+            for (let i = 0; i < articles.length; i++) {
+                if (!isRunning) break;
 
-                batchCount++;
-                if (batchCount >= config.batchSize) {
-                    console.log(`⏸️  Pause (${config.pauseAfterBatch}ms)...\n`);
-                    await randomDelay(config.pauseAfterBatch, config.pauseAfterBatch + 1000);
-                    batchCount = 0;
+                const article = articles[i];
+
+                // Visual indicator of processing
+                article.style.border = "2px solid orange";
+
+                const result = await processTweet(article);
+
+                article.style.border = "none";
+
+                if (result.status === 'success') {
+                    deletedCount++;
+                    somethingProcessedInThisView = true;
+                    consecutiveEmptyScrolls = 0; // Reset scroll counter
+
+                    console.log(`✅ Item #${deletedCount} processed (${result.type})\n`);
+
+                    batchCount++;
+                    if (batchCount >= config.batchSize) {
+                        console.log(`⏸️  Pause (${config.pauseAfterBatch}ms)...\n`);
+                        await randomDelay(config.pauseAfterBatch, config.pauseAfterBatch + 1000);
+                        batchCount = 0;
+                    }
+
+                    // Since DOM changed (element removed), we should probably stop this loop and re-scan
+                    break;
+                } else if (result.status === 'skip') {
+                    // Just continue to next item
+                } else {
+                    errorCount++;
+                    console.log(`❌ Error: ${result.reason}\n`);
                 }
-            } else if (result === 'skip') {
-                skippedCount++;
-                console.log(`⏭️  Skipped (${skippedCount} total)\n`);
-            } else {
-                errorCount++;
-                console.log(`❌ Error (${errorCount} total)\n`);
             }
 
-            await randomDelay();
+            if (!somethingProcessedInThisView) {
+                console.log(`⬇️  Nothing actionable in this view. Scrolling...`);
+                await scrollToLoadMore();
+            } else {
+                await randomDelay(1000, 1500);
+            }
+
+            await randomDelay(500, 1000);
         }
     };
 

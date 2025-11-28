@@ -1,151 +1,214 @@
 # 🧹 X/Twitter Replies Cleaner
 
-Herramienta para eliminar automáticamente todas tus respuestas (replies) de Twitter/X.
+Tool to automatically delete all your Twitter/X replies.
 
-## 📋 Opciones Disponibles
+## 📋 Available Options
 
-### ✅ **Opción 1: Script de Consola (Recomendado)**
+### ✅ **Option 1: Console Script (Recommended)**
 
-La forma más simple y directa. No requiere instalación.
+The simplest and most direct approach. No installation required.
 
-#### 📝 Instrucciones:
+#### 📝 Instructions:
 
-1. **Abre Twitter/X en tu navegador** (Chrome, Edge, Firefox, etc.)
-2. **Inicia sesión** en tu cuenta
-3. **Ve a tu perfil** y haz click en la pestaña **"Replies"** (Respuestas)
-4. Abre la **Consola del navegador**:
-   - Windows/Linux: `F12` o `Ctrl + Shift + J`
+1. **Open Twitter/X in your browser** (Chrome, Edge, Firefox, etc.)
+2. **Log in** to your account
+3. **Go to your profile** and click the **"Replies"** tab
+4. Open the **Browser Console**:
+   - Windows/Linux: `F12` or `Ctrl + Shift + J`
    - Mac: `Cmd + Option + J`
-5. **Copia todo el contenido** del archivo `console-script.js`
-6. **Pégalo en la consola** y presiona `Enter`
-7. El script comenzará a eliminar tus replies automáticamente
+5. **Copy all content** from the `console-script.js` file
+6. **Paste it in the console** and press `Enter`
+7. The script will start deleting your replies automatically
 
-#### ⚙️ Características:
-- ✅ No requiere instalación
-- ✅ Funciona en cualquier navegador
-- ✅ Usa tu sesión actual
-- ✅ Delays aleatorios para evitar bloqueos
-- ✅ Muestra progreso en tiempo real
-- ✅ Pausas automáticas cada 10 eliminaciones
-- ✅ Se puede detener recargando la página
+#### ⚙️ Features:
+- ✅ No installation required
+- ✅ Works in any browser
+- ✅ Uses your current session
+- ✅ Random delays to avoid blocks
+- ✅ Real-time progress display
+- ✅ Automatic pauses every 3 deletions
+- ✅ Can be stopped by reloading the page
 
 ---
 
-### 🤖 **Opción 2: Script Automatizado con Puppeteer**
+### 🤖 **Option 2: Automated Script with Puppeteer**
 
-Versión automatizada que controla el navegador. Más compleja pero totalmente automática.
+Automated version that controls the browser. More complex but fully automatic.
 
-#### 📦 Instalación:
+#### 📦 Installation:
 
 ```bash
-# Instalar dependencias
+# Install dependencies
 npm install
 ```
 
-#### 🚀 Uso:
+#### 🚀 Usage:
 
 ```bash
-# Ejecutar el script
+# Run the script
 npm start
 ```
 
-#### ⚙️ Nota Importante:
-Este script intenta usar tu perfil de Chrome/Edge existente. Si tienes problemas, usa la **Opción 1** (script de consola) que es más simple.
+#### ⚙️ Important Note:
+This script attempts to use your existing Chrome/Edge profile. If you have issues, use **Option 1** (console script) which is simpler.
 
 ---
 
-## ⚠️ Advertencias Importantes
+## ⚠️ Important Warnings
 
-1. **Rate Limiting**: Twitter/X tiene límites de acciones por hora. El script incluye pausas aleatorias para minimizar el riesgo de bloqueo.
+1. **Rate Limiting**: Twitter/X has limits on actions per hour. The script includes random pauses to minimize the risk of being blocked.
 
-2. **Acción Irreversible**: Una vez eliminado un reply, **no se puede recuperar**.
+2. **Irreversible Action**: Once a reply is deleted, **it cannot be recovered**.
 
-3. **Uso Bajo Tu Responsabilidad**: Esta herramienta es para uso personal. Úsala responsablemente.
+3. **Use at Your Own Risk**: This tool is for personal use. Use it responsibly.
 
-4. **Detener el Script**:
-   - **Opción 1**: Recarga la página
-   - **Opción 2**: `Ctrl + C` en la terminal
-
----
-
-## 📊 Características
-
-- 🔄 Eliminación automática uno por uno
-- ⏱️ Delays aleatorios (2-5 segundos)
-- 📦 Procesamiento por lotes (10 replies)
-- ⏸️ Pausas automáticas cada lote (8 segundos)
-- 📈 Estadísticas en tiempo real
-- ✅ Contador de eliminaciones exitosas
-- ❌ Contador de errores
-- 🔄 Scroll automático para cargar más replies
-- 🛡️ Protección contra rate limiting
+4. **Stop the Script**:
+   - **Option 1**: Reload the page (F5)
+   - **Option 2**: `Ctrl + C` in the terminal
 
 ---
 
-## 🐛 Solución de Problemas
+## 📊 Features
 
-### El script no encuentra el botón "More" o "Delete"
-
-Twitter/X cambia frecuentemente su interfaz. Si esto ocurre:
-
-1. Abre la consola del navegador (`F12`)
-2. Inspecciona manualmente un reply
-3. Verifica los selectores CSS usados
-4. Actualiza el script con los nuevos selectores
-
-### El script se detiene
-
-Posibles causas:
-- No hay más replies visibles
-- Twitter bloqueó temporalmente las acciones
-- Cambios en la interfaz de Twitter
-
-**Solución**: Espera unos minutos y vuelve a ejecutar el script.
-
-### Puppeteer no funciona
-
-Usa la **Opción 1** (script de consola) que es más confiable y simple.
+- 🔄 Automatic one-by-one deletion
+- ⏱️ Random delays (1-2 seconds)
+- 📦 Batch processing (3 replies)
+- ⏸️ Automatic pauses per batch (3 seconds)
+- 📈 Real-time statistics
+- ✅ Successful deletion counter
+- ❌ Error counter
+- 🔄 Automatic scroll to load more replies
+- 🛡️ Rate limiting protection
+- 🎯 User filter (only YOUR replies)
+- ⏳ Active wait for menu loading
+- 🔁 Retry system for failed attempts
 
 ---
 
-## 📝 Registro de Cambios
+## 🐛 Troubleshooting
 
-### v1.0.0
-- ✅ Script de consola implementado
-- ✅ Script con Puppeteer implementado
-- ✅ Delays aleatorios
-- ✅ Pausas por lotes
-- ✅ Estadísticas en tiempo real
+### Script doesn't find "More" or "Delete" button
 
----
+Twitter/X frequently changes its interface. If this happens:
 
-## 📄 Licencia
+1. Open browser console (`F12`)
+2. Manually inspect a reply
+3. Check the CSS selectors used
+4. Update the script with new selectors
 
-MIT License - Uso personal bajo tu responsabilidad.
+### Script stops
 
----
+Possible causes:
+- No more visible replies
+- Twitter temporarily blocked actions
+- Changes in Twitter's interface
 
-## 💡 Consejos
+**Solution**: Wait a few minutes and run the script again.
 
-1. **Ejecuta el script en horas de baja actividad** para minimizar el riesgo de rate limiting
-2. **Monitorea el proceso** para detectar cualquier problema
-3. **Guarda los logs** si necesitas llevar un registro
-4. **Ten paciencia**: Si tienes muchos replies, el proceso puede tomar tiempo
+### Puppeteer doesn't work
 
----
-
-## 🎯 ¿Cuál opción elegir?
-
-### Usa **Opción 1** (Script de Consola) si:
-- ✅ Quieres algo simple y rápido
-- ✅ No quieres instalar nada
-- ✅ Tienes problemas con Puppeteer
-
-### Usa **Opción 2** (Puppeteer) si:
-- ✅ Quieres automatización completa
-- ✅ Estás cómodo con Node.js
-- ✅ Necesitas más control sobre el proceso
+Use **Option 1** (console script) which is more reliable and simple.
 
 ---
 
-**⭐ Recomendación**: Empieza con la **Opción 1** (Script de Consola). Es más simple y funciona en todos los casos.
+## 📝 Version History
+
+### v4.2 STABLE
+- ✅ Active wait system with while loop
+- ✅ Intelligent retry system for empty menus
+- ✅ Improved logging and feedback
+- ✅ Optimized timing (500ms active checks)
+- ✅ ~90%+ success rate on YOUR replies
+
+### v4.1 WIP
+- ⚠️ First attempt at active wait (had bugs)
+- ⚠️ Increased menu wait time
+
+### v1.0
+- ✅ Console script implemented
+- ✅ Puppeteer script implemented
+- ✅ Random delays
+- ✅ Batch pauses
+- ✅ Real-time statistics
+- ✅ User filtering
+
+See [CHANGELOG.md](CHANGELOG.md) for detailed version history.
+
+---
+
+## 📄 License
+
+MIT License - Personal use at your own responsibility.
+
+---
+
+## 💡 Tips
+
+1. **Run the script during low activity hours** to minimize rate limiting risk
+2. **Monitor the process** to detect any issues
+3. **Save the logs** if you need to keep a record
+4. **Be patient**: If you have many replies, the process can take time
+5. **Keep the tab visible**: Some browsers throttle inactive tabs
+
+---
+
+## 🎯 Which option to choose?
+
+### Use **Option 1** (Console Script) if:
+- ✅ You want something simple and quick
+- ✅ You don't want to install anything
+- ✅ You have problems with Puppeteer
+- ✅ You're not familiar with Node.js
+
+### Use **Option 2** (Puppeteer) if:
+- ✅ You want complete automation
+- ✅ You're comfortable with Node.js
+- ✅ You need more control over the process
+- ✅ You want to schedule the task
+
+---
+
+**⭐ Recommendation**: Start with **Option 1** (Console Script). It's simpler and works in all cases.
+
+---
+
+## 🔧 Technical Details
+
+### How it works:
+
+1. **User Detection**: Automatically detects your logged-in username
+2. **Tweet Filtering**: Only processes tweets authored by you
+3. **Active Menu Wait**: Polls every 500ms until menu loads (max 5s)
+4. **Retry Logic**: If menu fails to load, retries once with longer wait
+5. **Delete Confirmation**: Finds and clicks confirmation button
+6. **Rate Limiting**: Random delays and batch pauses
+
+### Selectors Used:
+
+- `article[data-testid="tweet"]` - Tweet articles
+- `button[aria-label*="more"]` - More options button
+- `[role="menuitem"]` - Menu items
+- `[data-testid="confirmationSheetConfirm"]` - Confirmation button
+
+### Success Rate:
+
+- **v1.0**: ~30% (many empty menu issues)
+- **v4.2 STABLE**: ~90%+ (active wait system)
+
+---
+
+## 🙏 Contributing
+
+This is a personal project, but suggestions and improvements are welcome!
+
+1. Fork the repository
+2. Create your feature branch
+3. Commit your changes (in English)
+4. Push to the branch
+5. Open a Pull Request
+
+---
+
+## ⚠️ Disclaimer
+
+This tool automates browser actions on Twitter/X. Use responsibly and in accordance with Twitter's Terms of Service. The authors are not responsible for any account restrictions or bans that may result from use of this tool.

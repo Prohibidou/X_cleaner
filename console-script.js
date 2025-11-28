@@ -1,24 +1,24 @@
 /**
- * TWITTER/X REPLIES DELETER - Script de Consola [v4.2 STABLE]
- * ============================================================
+ * TWITTER/X REPLIES DELETER - Console Script [v4.2 STABLE]
+ * ==========================================================
  * 
- * INSTRUCCIONES:
- * 1. Abre Twitter/X y ve a tu perfil
- * 2. Click en la pestaña "Replies" (Respuestas)
- * 3. Abre la consola del navegador (F12)
- * 4. Pega este script completo y presiona Enter
- * 5. El script comenzará a eliminar SOLO TUS replies
+ * INSTRUCTIONS:
+ * 1. Open Twitter/X and go to your profile
+ * 2. Click on the "Replies" tab
+ * 3. Open browser console (F12)
+ * 4. Paste this entire script and press Enter
+ * 5. The script will start deleting ONLY YOUR replies
  * 
- * MEJORAS v4.2:
- * - ✅ Espera activa hasta que el menú cargue completamente
- * - ✅ Sistema de reintentos cuando el menú está vacío
- * - ✅ Filtro por usuario (solo elimina TUS replies)
- * - ✅ Manejo robusto de errores y timing
+ * IMPROVEMENTS v4.2:
+ * - ✅ Active wait until menu loads completely
+ * - ✅ Retry system when menu is empty
+ * - ✅ User filter (only deletes YOUR replies)
+ * - ✅ Robust error and timing handling
  */
 
 (async function deleteAllReplies() {
-    console.log('🚀 Iniciando X Cleaner [v4.2 STABLE]');
-    console.log('⚠️  Para detener: recarga la página (F5)');
+    console.log('🚀 Starting X Cleaner [v4.2 STABLE]');
+    console.log('⚠️  To stop: reload page (F5)');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
     let deletedCount = 0;
@@ -157,7 +157,7 @@
         return false;
     };
 
-    // FUNCIÓN MEJORADA CON ESPERA ACTIVA CORRECTA
+    // IMPROVED FUNCTION WITH ACTIVE WAITING
     const deleteTweet = async (article) => {
         try {
             await closeOpenMenus();
@@ -166,17 +166,17 @@
 
             const moreButton = findMoreButton(article);
             if (!moreButton) {
-                console.log('  ⚠️  Botón More no encontrado');
+                console.log('  ⚠️  More button not found');
                 return 'skip';
             }
 
-            console.log('  → Abriendo menú...');
+            console.log('  → Opening menu...');
             moreButton.click();
 
-            // ESPERA ACTIVA: Esperar hasta que el menú tenga opciones
+            // ACTIVE WAIT: Wait until menu has options loaded
             let menuLoaded = false;
             let waitAttempts = 0;
-            const maxWaitAttempts = 10; // 10 x 500ms = 5 segundos
+            const maxWaitAttempts = 10; // 10 x 500ms = 5 seconds
 
             while (!menuLoaded && waitAttempts < maxWaitAttempts) {
                 await randomDelay(500, 600);
@@ -184,15 +184,15 @@
 
                 if (menuItems.length > 0) {
                     menuLoaded = true;
-                    console.log(`  → ✓ Menú cargado (${menuItems.length} opciones)`);
+                    console.log(`  → ✓ Menu loaded (${menuItems.length} options)`);
                 } else {
                     waitAttempts++;
                 }
             }
 
-            // Si el menú no cargó, REINTENTAR UNA VEZ
+            // If menu didn't load, RETRY ONCE
             if (!menuLoaded) {
-                console.log('  → ⏳ Menú vacío, reintentando...');
+                console.log('  → ⏳ Menu empty, retrying...');
                 await closeOpenMenus();
                 await randomDelay(1500, 2000);
 
@@ -203,32 +203,32 @@
 
                 const menuItems = document.querySelectorAll('[role="menuitem"]');
                 if (menuItems.length === 0) {
-                    console.log('  → ❌ Menú sigue vacío');
+                    console.log('  → ❌ Menu still empty');
                     await closeOpenMenus();
                     return 'skip';
                 }
-                console.log(`  → ✓ Menú cargado en 2° intento (${menuItems.length} opciones)`);
+                console.log(`  → ✓ Menu loaded on 2nd attempt (${menuItems.length} options)`);
             }
 
             const deleteButton = findDeleteButton();
             if (!deleteButton) {
-                console.log('  ⚠️  Delete no encontrado (no es tu reply)');
+                console.log('  ⚠️  Delete not found (not your reply)');
                 await closeOpenMenus();
                 return 'skip';
             }
 
-            console.log('  → ✓ Delete encontrado');
+            console.log('  → ✓ Delete found');
             deleteButton.click();
             await randomDelay(900, 1300);
 
             const confirmed = await confirmDelete();
             if (!confirmed) {
-                console.log('  ⚠️  No se pudo confirmar');
+                console.log('  ⚠️  Could not confirm');
                 await closeOpenMenus();
                 return 'error';
             }
 
-            console.log('  → ✓ Confirmado');
+            console.log('  → ✓ Confirmed');
             await randomDelay(config.waitAfterDelete, config.waitAfterDelete + 500);
             return 'success';
 
@@ -242,12 +242,12 @@
     const processReplies = async () => {
         const username = getLoggedInUsername();
         if (!username) {
-            console.error('❌ No se pudo detectar tu username');
+            console.error('❌ Could not detect username');
             return;
         }
 
-        console.log(`✅ Usuario: @${username}`);
-        console.log('\n🔍 Buscando tus replies...\n');
+        console.log(`✅ User: @${username}`);
+        console.log('\n🔍 Searching for your replies...\n');
 
         let consecutiveSkips = 0;
         let batchCount = 0;
@@ -259,15 +259,15 @@
             const replies = getUserReplies(username);
             const currentReplyCount = replies.length;
 
-            console.log(`\n📊 Intento #${attemptCount} - Tus tweets: ${currentReplyCount}`);
+            console.log(`\n📊 Attempt #${attemptCount} - Your tweets: ${currentReplyCount}`);
 
             if (currentReplyCount === 0) {
                 consecutiveSkips++;
-                console.log(`⚠️  Sin replies tuyos (${consecutiveSkips}/${config.maxConsecutiveSkips})`);
+                console.log(`⚠️  No replies found (${consecutiveSkips}/${config.maxConsecutiveSkips})`);
 
                 if (consecutiveSkips >= config.maxConsecutiveSkips) {
                     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-                    console.log('✅ No hay más replies tuyos');
+                    console.log('✅ No more replies to delete');
                     break;
                 }
 
@@ -276,22 +276,22 @@
             }
 
             consecutiveSkips = 0;
-            console.log(`🗑️  Procesando reply...`);
+            console.log(`🗑️  Processing reply...`);
             const result = await deleteTweet(replies[0]);
 
             if (result === 'success') {
                 deletedCount++;
-                console.log(`✅ Reply #${deletedCount} eliminado\n`);
+                console.log(`✅ Reply #${deletedCount} deleted\n`);
 
                 batchCount++;
                 if (batchCount >= config.batchSize) {
-                    console.log(`⏸️  Pausa (${config.pauseAfterBatch}ms)...\n`);
+                    console.log(`⏸️  Pause (${config.pauseAfterBatch}ms)...\n`);
                     await randomDelay(config.pauseAfterBatch, config.pauseAfterBatch + 1000);
                     batchCount = 0;
                 }
             } else if (result === 'skip') {
                 skippedCount++;
-                console.log(`⏭️  Omitido (${skippedCount} total)\n`);
+                console.log(`⏭️  Skipped (${skippedCount} total)\n`);
             } else {
                 errorCount++;
                 console.log(`❌ Error (${errorCount} total)\n`);
@@ -303,13 +303,13 @@
 
     window.stopDeletingReplies = () => {
         isRunning = false;
-        console.log('\n🛑 Deteniendo...');
+        console.log('\n🛑 Stopping...');
     };
 
     try {
         await processReplies();
     } catch (error) {
-        console.error('❌ Error fatal:', error);
+        console.error('❌ Fatal error:', error);
     }
 
     const endTime = Date.now();
@@ -318,18 +318,18 @@
     const seconds = duration % 60;
 
     console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('📊 RESUMEN FINAL');
+    console.log('📊 FINAL SUMMARY');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log(`✅ Eliminados: ${deletedCount}`);
-    console.log(`⏭️  Omitidos: ${skippedCount}`);
-    console.log(`❌ Errores: ${errorCount}`);
-    console.log(`🔄 Intentos: ${attemptCount}`);
-    console.log(`⏱️  Tiempo: ${minutes}m ${seconds}s`);
+    console.log(`✅ Deleted: ${deletedCount}`);
+    console.log(`⏭️  Skipped: ${skippedCount}`);
+    console.log(`❌ Errors: ${errorCount}`);
+    console.log(`🔄 Attempts: ${attemptCount}`);
+    console.log(`⏱️  Time: ${minutes}m ${seconds}s`);
     if (deletedCount > 0) {
         const avgTime = Math.floor(duration / deletedCount);
-        console.log(`⏱️  Promedio: ${avgTime}s/reply`);
+        console.log(`⏱️  Average: ${avgTime}s/reply`);
     }
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('\n💡 Recarga (F5) si quedan más replies');
+    console.log('\n💡 Reload (F5) if more replies remain');
 
 })();
